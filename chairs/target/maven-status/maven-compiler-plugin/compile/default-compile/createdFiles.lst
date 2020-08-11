@@ -1,0 +1,5 @@
+com/example/chairs/repository/ChairRepository.class
+com/example/chairs/model/Chair.class
+com/example/chairs/service/ChairService.class
+com/example/chairs/controller/ChairController.class
+com/example/chairs/ChairsApplication.class

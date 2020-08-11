@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.chairs.model.Chair;
 import com.example.chairs.repository.ChairRepository;
+import com.example.chairs.service.ChairService;
+
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
@@ -29,20 +31,22 @@ public class ChairController {
   @Autowired
   ChairRepository chairRepository;
 
+  @Autowired
+  ChairService chairService;
+
   @GetMapping("/chairs")
   public ResponseEntity<List<Chair>> getAllChairs(@RequestParam(required = false) String room) {
     try {
       List<Chair> chairsList = new ArrayList<Chair>();
 
       if (room == null)
-        chairRepository.findAll().forEach(chairsList::add);
+        chairService.listAllChairs().forEach(chairsList::add);
       else
-        chairRepository.findByRoomContaining(room).forEach(chairsList::add);
+        chairService.listAllChairsByRoom(room).forEach(chairsList::add);
 
       if (chairsList.isEmpty()) {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
       }
-      System.out.println(chairsList);
       return new ResponseEntity<>(chairsList, HttpStatus.OK);
     } catch (Exception e) {
       return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -52,7 +56,6 @@ public class ChairController {
   @GetMapping("/chairs/{id}")
   public ResponseEntity<Chair> getChairById(@PathVariable("id") long id) {
     Optional<Chair> chairData = chairRepository.findById(id);
-
     if (chairData.isPresent()) {
       return new ResponseEntity<>(chairData.get(), HttpStatus.OK);
     } else {
@@ -63,8 +66,7 @@ public class ChairController {
   @PostMapping("/chairs")
   public ResponseEntity<Chair> createChair(@RequestBody Chair chair) {
     try {
-      Chair _chair = chairRepository
-          .save(new Chair(chair.getRoom(), chair.getPatient(), false));
+      Chair _chair = chairService.saveChairDefault(chair);
       return new ResponseEntity<>(_chair, HttpStatus.CREATED);
     } catch (Exception e) {
       return new ResponseEntity<>(null, HttpStatus.EXPECTATION_FAILED);
@@ -73,14 +75,14 @@ public class ChairController {
 
   @PutMapping("/chairs/{id}")
   public ResponseEntity<Chair> updateChair(@PathVariable("id") long id, @RequestBody Chair chair) {
-    Optional<Chair> chairData = chairRepository.findById(id);
+    Optional<Chair> chairData = chairService.findChairById(id);
 
     if (chairData.isPresent()) {
       Chair _chair = chairData.get();
       _chair.setRoom(chair.getRoom());
       _chair.setPatient(chair.getPatient());
       _chair.setOccupied(chair.isOccupied());
-      return new ResponseEntity<>(chairRepository.save(_chair), HttpStatus.OK);
+      return new ResponseEntity<>(chairService.saveChair(_chair), HttpStatus.OK);
     } else {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
@@ -89,7 +91,7 @@ public class ChairController {
   @DeleteMapping("/chairs/{id}")
   public ResponseEntity<HttpStatus> deleteChair(@PathVariable("id") long id) {
     try {
-      chairRepository.deleteById(id);
+      chairService.deleteChair(id);
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     } catch (Exception e) {
       return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
@@ -99,7 +101,7 @@ public class ChairController {
   @DeleteMapping("/chairs")
   public ResponseEntity<HttpStatus> deleteAllChairs() {
     try {
-      chairRepository.deleteAll();
+      chairService.deleteAllChairs();
       return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     } catch (Exception e) {
       return new ResponseEntity<>(HttpStatus.EXPECTATION_FAILED);
